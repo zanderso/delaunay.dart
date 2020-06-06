@@ -5,7 +5,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-final double _epsilon = pow(2.0, -52);
+final double _epsilon = pow(2.0, -52) as double;
 final Uint32List _edgeStack = Uint32List(512);
 
 /// A class for quickly calculating the Delaunay triangulation in 2D of a set
@@ -40,38 +40,34 @@ final Uint32List _edgeStack = Uint32List(512);
 class Delaunay {
   /// Allocates memory for a Delaunay triangulation, keeping a reference to
   /// [coords].
-  Delaunay(Float32List coords) {
-    final int n = coords.length >> 1;
-    _inputCoords = coords;
+  Delaunay(Float32List coords) :
+    _inputCoords = coords,
 
     // Provisionally set _coords to the input list. Decide later whether to
     // sort and replace.
-    _coords = coords;
+    _coords = coords,
 
     // Arrays that will store the triangulation graph.
-    final int maxTriangles = max((n * 2) - 5, 0);
-    _triangles = Uint32List(maxTriangles * 3);
-    _halfEdges = Int32List(maxTriangles * 3);
-    _trianglesLen = 0;
+    _triangles = Uint32List(max(coords.length - 5, 0) * 3),
+    _halfEdges = Int32List(max(coords.length - 5, 0) * 3),
+    _trianglesLen = 0,
+
+    _hullSize = 0,
+    _hull = Uint32List(0),
 
     // Temporary arrays for tracking the edges of the advancing convex hull.
-    final int hashShift = sqrt(n).ceil().bitLength + 1;
-    _hashSize = 1 << hashShift;
-    _hashMask = _hashSize - 1;
-    _hullHash = Int32List(_hashSize)..fillRange(0, _hashSize, -1);
+    _hullPrev = Uint32List(coords.length >> 1),
+    _hullNext = Uint32List(coords.length >> 1),
+    _hullTri = Uint32List(coords.length >> 1),
+    _hashSize = 1 << (sqrt(coords.length << 1).ceil().bitLength + 1),
+    _hashMask = (1 << (sqrt(coords.length << 1).ceil().bitLength + 1)) - 1,
+    _hullHash = Int32List(1 << (sqrt(coords.length << 1).ceil().bitLength + 1))
+      ..fillRange(0, 1 << (sqrt(coords.length << 1).ceil().bitLength + 1), -1),
 
-    _hullPrev = Uint32List(n);
-    _hullNext = Uint32List(n);
-    _hullTri = Uint32List(n);
-
-    _hullSize = 0;
-    _hull = Uint32List(0);
-
-    _ids = Uint32List(n);
-    _dists = Float32List(n);
-
+    // Arrays to help sort the points.
+    _ids = Uint32List(coords.length >> 1),
+    _dists = Float32List(coords.length >> 1),
     _colinear = false;
-  }
 
   /// Allocates memory for a Delaunay triangulation.
   ///
@@ -134,42 +130,44 @@ class Delaunay {
     _coords[2 * i + 1],
   );
 
+  /// Whether after a call to [initialize], it has been detected that this is
+  /// the degenerate case of all points being colinear.
   bool get colinear => _colinear;
 
   // The coordinates given to the constructor.
-  Float32List _inputCoords;
+  final Float32List _inputCoords;
 
   // If needed for performance, the list of coordinates sorted in order of
   // increasing distance from the seed triangle's circumcenter.
-  Float32List _sortedCoords;
+  /* late */ Float32List _sortedCoords;
 
   // A reference either to _inputCoords or _coords whichever is indicated
   // by the number of points.
   Float32List _coords;
 
   // The triangles.
-  Uint32List _triangles;
+  final Uint32List _triangles;
 
   // The edges.
-  Int32List _halfEdges;
+  final Int32List _halfEdges;
 
-  int _hashSize;
-  int _hashMask;
-  Int32List _hullHash;
-  int _hullStart;
+  final int _hashSize;
+  final int _hashMask;
+  final Int32List _hullHash;
+  /* late */ int _hullStart;
   int _hullSize;
   Uint32List _hull;
-  Uint32List _hullPrev;
-  Uint32List _hullNext;
-  Uint32List _hullTri;
+  final Uint32List _hullPrev;
+  final Uint32List _hullNext;
+  final Uint32List _hullTri;
 
   // Temporary arrays for sorting points.
-  Uint32List _ids;
-  Float32List _dists;
+  final Uint32List _ids;
+  final Float32List _dists;
 
-  int _i0, _i1, _i2;
-  double _cx;
-  double _cy;
+  /* late */ int _i0, _i1, _i2;
+  /* late */ double _cx;
+  /* late */ double _cy;
   int _trianglesLen;
 
   bool _colinear;
@@ -294,8 +292,6 @@ class Delaunay {
         }
       }
       _hull = hull.sublist(0, j);
-      _triangles = Uint32List(0);
-      _halfEdges = Int32List(0);
       _colinear = true;
       return;
     }
