@@ -40,34 +40,35 @@ final Uint32List _edgeStack = Uint32List(512);
 class Delaunay {
   /// Allocates memory for a Delaunay triangulation, keeping a reference to
   /// [coords].
-  Delaunay(Float32List coords) :
-    _inputCoords = coords,
+  Delaunay(Float32List coords)
+      : _inputCoords = coords,
 
-    // Provisionally set _coords to the input list. Decide later whether to
-    // sort and replace.
-    _coords = coords,
+        // Provisionally set _coords to the input list. Decide later whether to
+        // sort and replace.
+        _coords = coords,
 
-    // Arrays that will store the triangulation graph.
-    _triangles = Uint32List(max(coords.length - 5, 0) * 3),
-    _halfEdges = Int32List(max(coords.length - 5, 0) * 3),
-    _trianglesLen = 0,
+        // Arrays that will store the triangulation graph.
+        _triangles = Uint32List(max(coords.length - 5, 0) * 3),
+        _halfEdges = Int32List(max(coords.length - 5, 0) * 3),
+        _trianglesLen = 0,
+        _hullSize = 0,
+        _hull = Uint32List(0),
 
-    _hullSize = 0,
-    _hull = Uint32List(0),
+        // Temporary arrays for tracking the edges of the advancing convex hull.
+        _hullPrev = Uint32List(coords.length >> 1),
+        _hullNext = Uint32List(coords.length >> 1),
+        _hullTri = Uint32List(coords.length >> 1),
+        _hashSize = 1 << (sqrt(coords.length << 1).ceil().bitLength + 1),
+        _hashMask = (1 << (sqrt(coords.length << 1).ceil().bitLength + 1)) - 1,
+        _hullHash =
+            Int32List(1 << (sqrt(coords.length << 1).ceil().bitLength + 1))
+              ..fillRange(
+                  0, 1 << (sqrt(coords.length << 1).ceil().bitLength + 1), -1),
 
-    // Temporary arrays for tracking the edges of the advancing convex hull.
-    _hullPrev = Uint32List(coords.length >> 1),
-    _hullNext = Uint32List(coords.length >> 1),
-    _hullTri = Uint32List(coords.length >> 1),
-    _hashSize = 1 << (sqrt(coords.length << 1).ceil().bitLength + 1),
-    _hashMask = (1 << (sqrt(coords.length << 1).ceil().bitLength + 1)) - 1,
-    _hullHash = Int32List(1 << (sqrt(coords.length << 1).ceil().bitLength + 1))
-      ..fillRange(0, 1 << (sqrt(coords.length << 1).ceil().bitLength + 1), -1),
-
-    // Arrays to help sort the points.
-    _ids = Uint32List(coords.length >> 1),
-    _dists = Float32List(coords.length >> 1),
-    _colinear = false;
+        // Arrays to help sort the points.
+        _ids = Uint32List(coords.length >> 1),
+        _dists = Float32List(coords.length >> 1),
+        _colinear = false;
 
   /// Allocates memory for a Delaunay triangulation.
   ///
@@ -97,17 +98,17 @@ class Delaunay {
   /// double ay = coords[2 * a + 1];
   /// ```
   Uint32List get triangles => Uint32List.sublistView(
-    _triangles,
-    0,
-    _trianglesLen,
-  );
+        _triangles,
+        0,
+        _trianglesLen,
+      );
 
   /// The list of edges in the triangulation.
   Int32List get halfEdges => Int32List.sublistView(
-    _halfEdges,
-    0,
-    _trianglesLen,
-  );
+        _halfEdges,
+        0,
+        _trianglesLen,
+      );
 
   /// The coordinates being triangulated.
   ///
@@ -126,9 +127,9 @@ class Delaunay {
 
   /// `coords[i]` in the form of a `Point<double>`.
   Point<double> getPoint(int i) => Point<double>(
-    _coords[2 * i],
-    _coords[2 * i + 1],
-  );
+        _coords[2 * i],
+        _coords[2 * i + 1],
+      );
 
   /// Whether after a call to [initialize], it has been detected that this is
   /// the degenerate case of all points being colinear.
@@ -224,8 +225,10 @@ class Delaunay {
     // Pick a seed point close to the center.
     for (int i = 0; i < n; i++) {
       final double d = _dist(
-        cx, cy,
-        _inputCoords[2 * i], _inputCoords[2 * i + 1],
+        cx,
+        cy,
+        _inputCoords[2 * i],
+        _inputCoords[2 * i + 1],
       );
       if (d < minDist) {
         i0 = i;
@@ -242,8 +245,10 @@ class Delaunay {
         continue;
       }
       final double d = _dist(
-        i0x, i0y,
-        _inputCoords[2 * i], _inputCoords[2 * i + 1],
+        i0x,
+        i0y,
+        _inputCoords[2 * i],
+        _inputCoords[2 * i + 1],
       );
       if (d < minDist && d > 0.0) {
         i1 = i;
@@ -261,9 +266,12 @@ class Delaunay {
         continue;
       }
       final double r = _circumradius(
-        i0x, i0y,
-        i1x, i1y,
-        _inputCoords[2 * i], _inputCoords[2 * i + 1],
+        i0x,
+        i0y,
+        i1x,
+        i1y,
+        _inputCoords[2 * i],
+        _inputCoords[2 * i + 1],
       );
       if (r < minRadius) {
         i2 = i;
@@ -419,9 +427,12 @@ class Delaunay {
     while (true) {
       q = _hullNext[e];
       final bool orient = _orient(
-        x, y,
-        _coords[2 * e], _coords[2 * e + 1],
-        _coords[2 * q], _coords[2 * q + 1],
+        x,
+        y,
+        _coords[2 * e],
+        _coords[2 * e + 1],
+        _coords[2 * q],
+        _coords[2 * q + 1],
       );
       if (orient) {
         break;
@@ -443,7 +454,7 @@ class Delaunay {
     // Recursively flip triangles from the point until they satisfy the
     // Delaunay condition.
     _hullTri[i] = _legalize(t + 2);
-    _hullTri[e] = t;  // Keep track of boundary triangles on the hull.
+    _hullTri[e] = t; // Keep track of boundary triangles on the hull.
     hullSize++;
 
     // Walk forward through the hull, adding more triangles and flipping
@@ -452,16 +463,19 @@ class Delaunay {
     while (true) {
       q = _hullNext[n];
       final bool orient = _orient(
-        x, y,
-        _coords[2 * n], _coords[2 * n + 1],
-        _coords[2 * q], _coords[2 * q + 1],
+        x,
+        y,
+        _coords[2 * n],
+        _coords[2 * n + 1],
+        _coords[2 * q],
+        _coords[2 * q + 1],
       );
       if (!orient) {
         break;
       }
       t = _addTriangle(n, i, q, _hullTri[i], -1, _hullTri[n]);
       _hullTri[i] = _legalize(t + 2);
-      _hullNext[n] = n;  // Mark as removed.
+      _hullNext[n] = n; // Mark as removed.
       hullSize--;
       n = q;
     }
@@ -471,9 +485,12 @@ class Delaunay {
       while (true) {
         q = _hullPrev[e];
         final bool orient = _orient(
-          x, y,
-          _coords[2 * q], _coords[2 * q + 1],
-          _coords[2 * e], _coords[2 * e + 1],
+          x,
+          y,
+          _coords[2 * q],
+          _coords[2 * q + 1],
+          _coords[2 * e],
+          _coords[2 * e + 1],
         );
         if (!orient) {
           break;
@@ -481,7 +498,7 @@ class Delaunay {
         t = _addTriangle(q, i, e, -1, _hullTri[e], _hullTri[q]);
         _legalize(t + 2);
         _hullTri[q] = t;
-        _hullNext[e] = e;  // Mark as removed.
+        _hullNext[e] = e; // Mark as removed.
         hullSize--;
         e = q;
       }
@@ -546,7 +563,8 @@ class Delaunay {
       final int a0 = a - _mod3(a);
       ar = a0 + _mod3(a + 2);
 
-      if (b == -1) {  // Convex hull edge.
+      if (b == -1) {
+        // Convex hull edge.
         if (i == 0) {
           break;
         }
@@ -564,7 +582,8 @@ class Delaunay {
       final int p1 = _triangles[bl];
 
       bool illegal;
-      { // Check whether p1 is in the circumcircle of p0, pr, and pl.
+      {
+        // Check whether p1 is in the circumcircle of p0, pr, and pl.
         final double ax = _coords[2 * p0];
         final double ay = _coords[2 * p0 + 1];
         final double bx = _coords[2 * pr];
@@ -585,8 +604,9 @@ class Delaunay {
         final double cp = fx * fx + fy * fy;
 
         illegal = dx * (ey * cp - bp * fy) -
-                  dy * (ex * cp - bp * fx) +
-                  ap * (ex * fy - ey * fx) < 0.0;
+                dy * (ex * cp - bp * fx) +
+                ap * (ex * fy - ey * fx) <
+            0.0;
       }
 
       if (illegal) {
@@ -630,9 +650,12 @@ class Delaunay {
   }
 
   double _circumradius(
-    double ax, double ay,
-    double bx, double by,
-    double cx, double cy,
+    double ax,
+    double ay,
+    double bx,
+    double by,
+    double cx,
+    double cy,
   ) {
     final double dx = bx - ax;
     final double dy = by - ay;
@@ -650,9 +673,12 @@ class Delaunay {
   }
 
   Point<double> _circumcenter(
-    double ax, double ay,
-    double bx, double by,
-    double cx, double cy,
+    double ax,
+    double ay,
+    double bx,
+    double by,
+    double cx,
+    double cy,
   ) {
     final double dx = bx - ax;
     final double dy = by - ay;
@@ -702,23 +728,29 @@ class Delaunay {
   // Return 2d orientation sign if we're confident in it through J. Shewchuk's
   // error bound check.
   double _orientIfSure(
-    double px, double py,
-    double rx, double ry,
-    double qx, double qy,
+    double px,
+    double py,
+    double rx,
+    double ry,
+    double qx,
+    double qy,
   ) {
     final double l = (ry - py) * (qx - px);
     final double r = (rx - px) * (qy - py);
     return (l - r).abs() >= 3.3306690738754716e-16 * (l + r).abs()
-      ? l - r
-      : 0.0;
+        ? l - r
+        : 0.0;
   }
 
   // A more robust orientation test that's stable in a given triangle (to fix
   // robustness issues).
   bool _orient(
-    double rx, double ry,
-    double qx, double qy,
-    double px, double py,
+    double rx,
+    double ry,
+    double qx,
+    double qy,
+    double px,
+    double py,
   ) {
     double orientation = _orientIfSure(px, py, rx, ry, qx, qy);
     if (orientation != 0.0) {

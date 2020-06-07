@@ -13,32 +13,38 @@ import 'svg.dart';
 
 Future<void> main(List<String> args) async {
   final ArgParser argParser = ArgParser()
-    ..addFlag('verbose',
+    ..addFlag(
+      'verbose',
       abbr: 'v',
       help: 'Verbose output',
       defaultsTo: false,
     )
-    ..addOption('output',
+    ..addOption(
+      'output',
       abbr: 'o',
       help: 'Path to the output file',
       defaultsTo: 'delaunay.svg',
     )
-    ..addOption('width',
+    ..addOption(
+      'width',
       abbr: 'w',
       help: 'Width of the output in mm',
       defaultsTo: '841',
     )
-    ..addOption('height',
+    ..addOption(
+      'height',
       abbr: 'h',
       help: 'Height of the output in mm',
       defaultsTo: '1189',
     )
-    ..addOption('points',
+    ..addOption(
+      'points',
       abbr: 'p',
       help: 'Number of points',
       defaultsTo: '1000',
     )
-    ..addOption('seed',
+    ..addOption(
+      'seed',
       abbr: 's',
       help: 'RNG seed',
       defaultsTo: '42',
@@ -88,7 +94,7 @@ Future<void> main(List<String> args) async {
 
   if (options.verbose) {
     print('Triangulated with ${triangulator.triangles.length ~/ 3} triangles '
-          'in ${sw.elapsedMilliseconds}ms');
+        'in ${sw.elapsedMilliseconds}ms');
   }
 
   sw.reset();
@@ -185,7 +191,7 @@ class Options {
 Random r;
 
 double nextInRange(double min, double max) =>
-  r.nextDouble() * (max - min) + min;
+    r.nextDouble() * (max - min) + min;
 
 Color randomColor() => rgb(r.nextInt(256), r.nextInt(256), r.nextInt(256));
 
@@ -200,8 +206,7 @@ Point<double> randomPoint(double minX, double maxX, double minY, double maxY) {
 
 int floor(double d) => d.floor();
 
-Iterable<Color> gradient(List<Color> colors,
-                         int colorsPerSegment) sync* {
+Iterable<Color> gradient(List<Color> colors, int colorsPerSegment) sync* {
   if (colors.isEmpty) {
     yield Color.black;
   } else {
@@ -212,10 +217,11 @@ Iterable<Color> gradient(List<Color> colors,
       final double gStep = (end.g - start.g) / colorsPerSegment;
       final double bStep = (end.b - start.b) / colorsPerSegment;
       for (int j = 0; j < colorsPerSegment; j++) {
-        yield Color(floor(start.r + rStep*j),
-                    floor(start.g + gStep*j),
-                    floor(start.b + bStep*j));
-
+        yield Color(
+          floor(start.r + rStep * j),
+          floor(start.g + gStep * j),
+          floor(start.b + bStep * j),
+        );
       }
       start = end;
     }
@@ -229,8 +235,8 @@ Polygon polygonOfTriangle(
   Point<double> a,
   Point<double> b,
   Point<double> c, {
-    Color Function() colorFn = randomColor
-  }) {
+  Color Function() colorFn = randomColor,
+}) {
   return Polygon(
     points: <SvgPoint>[
       SvgPoint(a),
@@ -239,7 +245,7 @@ Polygon polygonOfTriangle(
       SvgPoint(a),
     ],
     fill: Fill(color: colorFn()),
-    stroke: const Stroke(width: 1.0, color: Color.black)
+    stroke: const Stroke(width: 1.0, color: Color.black),
   );
 }
 
