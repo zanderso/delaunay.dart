@@ -1,6 +1,13 @@
-// Copyright 2020 The Flutter Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+// Copyright 2020 Google LLC
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
+
+// This program creates an svg file of a delaunay trianulation of a random set
+// of points.
+//
+// Run 'dart delaunay_example.dart --help' for details.
 
 import 'dart:async';
 import 'dart:io';
@@ -11,13 +18,25 @@ import 'package:delaunay/delaunay.dart';
 
 import 'svg.dart';
 
+const String description =
+    'delaunay_example.dart: An example program that creates a delaunay '
+    'trianulation svg file.';
+
 Future<void> main(List<String> args) async {
   final ArgParser argParser = ArgParser()
+    ..addFlag(
+      'help',
+      abbr: 'h',
+      help: 'Print help',
+      defaultsTo: false,
+      negatable: false,
+    )
     ..addFlag(
       'verbose',
       abbr: 'v',
       help: 'Verbose output',
       defaultsTo: false,
+      negatable: false,
     )
     ..addOption(
       'output',
@@ -33,7 +52,7 @@ Future<void> main(List<String> args) async {
     )
     ..addOption(
       'height',
-      abbr: 'h',
+      abbr: 'g',
       help: 'Height of the output in mm',
       defaultsTo: '1189',
     )
@@ -52,8 +71,16 @@ Future<void> main(List<String> args) async {
   final ArgResults argResults = argParser.parse(args);
   final Options options = Options.fromArgResults(argResults);
   if (options == null) {
+    stderr.writeln(description);
+    stderr.writeln();
     stderr.writeln(argParser.usage);
     exit(1);
+  }
+  if (options.help) {
+    stdout.writeln(description);
+    stdout.writeln();
+    stdout.writeln(argParser.usage);
+    return;
   }
 
   r = Random(options.seed);
@@ -168,6 +195,7 @@ class Options {
       points,
       seed,
       results['verbose'],
+      results['help'],
     );
   }
 
@@ -178,6 +206,7 @@ class Options {
     this.points,
     this.seed,
     this.verbose,
+    this.help,
   );
 
   final int width;
@@ -186,6 +215,7 @@ class Options {
   final int points;
   final int seed;
   final bool verbose;
+  final bool help;
 }
 
 Random r;

@@ -1,7 +1,13 @@
+# Copyright 2020 Google LLC
+#
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file or at
+# https://developers.google.com/open-source/licenses/bsd
+
 name: delaunay
 description: Delaunay triangulation.
 version: 0.1.0
-# homepage: https://www.example.com
+homepage: https://github.com/zanderso/delaunay.dart
 
 environment:
   sdk: '>=2.7.0 <3.0.0'
