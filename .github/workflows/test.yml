@@ -1,0 +1,17 @@
+name: Tests
+on: [pull_request]
+
+jobs:
+  tool_test_linux:
+    runs-on: ubuntu-latest
+    container:
+      image:  google/dart:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: pub get
+      - name: Analyze
+        run: dartanalyzer .
+      - name: Test
+        run: pub run test
