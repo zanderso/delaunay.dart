@@ -107,7 +107,7 @@ class SvgPoint implements _Writable {
 
 SvgValue V(double v, [Unit u = Unit.px]) => SvgValue(v, unit: u);
 SvgPoint P(double x, double y, [Unit u = Unit.px]) =>
-  SvgPoint(Point<double>(x, y), unit: u);
+    SvgPoint(Point<double>(x, y), unit: u);
 
 class Dimensions {
   const Dimensions(this.width, this.height);
@@ -239,12 +239,9 @@ class StrokeLinejoin {
 
   static const StrokeLinejoin inherit =
       StrokeLinejoin._(_StrokeLinejoins.inherit);
-  static const StrokeLinejoin miter =
-      StrokeLinejoin._(_StrokeLinejoins.miter);
-  static const StrokeLinejoin round =
-      StrokeLinejoin._(_StrokeLinejoins.round);
-  static const StrokeLinejoin bevel =
-      StrokeLinejoin._(_StrokeLinejoins.bevel);
+  static const StrokeLinejoin miter = StrokeLinejoin._(_StrokeLinejoins.miter);
+  static const StrokeLinejoin round = StrokeLinejoin._(_StrokeLinejoins.round);
+  static const StrokeLinejoin bevel = StrokeLinejoin._(_StrokeLinejoins.bevel);
 
   static const List<String> _strings = <String>[
     'inherit',
@@ -754,7 +751,8 @@ class Document {
     ss.write(_attribute('width', dimensions.width));
     ss.write(_attribute('height', dimensions.height));
     ss.write(_attribute(
-      'viewBox', '0 0 ${dimensions.width.v} ${dimensions.height.v}',
+      'viewBox',
+      '0 0 ${dimensions.width.v} ${dimensions.height.v}',
     ));
     ss.write(_attribute('xmlns', 'http://www.w3.org/2000/svg'));
     ss.write(_attribute('version', '1.1'));
