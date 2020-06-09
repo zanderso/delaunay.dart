@@ -4,8 +4,8 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
-// This program creates an svg file of a delaunay trianulation of a random set
-// of points.
+// This program creates a png file of a delaunay trianulation of a random set
+// of points with colors taken from an input image.
 //
 // Run 'dart delaunay_example.dart --help' for details.
 
@@ -15,12 +15,11 @@ import 'dart:math';
 
 import 'package:args/args.dart';
 import 'package:delaunay/delaunay.dart';
-
-import 'svg.dart';
+import 'package:image/image.dart' as image;
 
 const String description =
-    'delaunay_example.dart: An example program that creates a delaunay '
-    'trianulation svg file.';
+    'delaunay_example.dart: An example program that creates a random delaunay '
+    'trianulation png file with colors from an input image.';
 
 Future<void> main(List<String> args) async {
   final ArgParser argParser = ArgParser()
@@ -39,22 +38,15 @@ Future<void> main(List<String> args) async {
       negatable: false,
     )
     ..addOption(
+      'input',
+      abbr: 'i',
+      help: 'Input image from which to extract colors for triangles',
+    )
+    ..addOption(
       'output',
       abbr: 'o',
       help: 'Path to the output file',
-      defaultsTo: 'delaunay.svg',
-    )
-    ..addOption(
-      'width',
-      abbr: 'w',
-      help: 'Width of the output in mm',
-      defaultsTo: '841',
-    )
-    ..addOption(
-      'height',
-      abbr: 'g',
-      help: 'Height of the output in mm',
-      defaultsTo: '1189',
+      defaultsTo: 'delaunay.png',
     )
     ..addOption(
       'points',
@@ -83,20 +75,22 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  r = Random(options.seed);
+  final Random r = Random(options.seed);
 
   const double minX = 0.0;
-  final double maxX = options.width.toDouble();
+  final double maxX = options.inputImage.width.toDouble();
   const double minY = 0.0;
-  final double maxY = options.height.toDouble();
-  final Document doc = Document(
-    dimensions: Dimensions(V(maxX, Unit.mm), V(maxY, Unit.mm)),
+  final double maxY = options.inputImage.height.toDouble();
+
+  final image.Image img = image.Image(
+    options.inputImage.width,
+    options.inputImage.height,
   );
 
   final int numPoints = options.points;
   final List<Point<double>> points = <Point<double>>[];
   for (int i = 0; i < numPoints; i++) {
-    points.add(randomPoint(minX, maxX, minY, maxY));
+    points.add(Point<double>(r.nextDouble() * maxX, r.nextDouble() * maxY));
   }
 
   points.add(const Point<double>(minX, minY));
@@ -108,7 +102,6 @@ Future<void> main(List<String> args) async {
 
   final Stopwatch sw = Stopwatch()..start();
   triangulator.initialize();
-  sw.stop();
 
   if (options.verbose) {
     print('Triangulator initialized in ${sw.elapsedMilliseconds}ms.');
@@ -117,7 +110,6 @@ Future<void> main(List<String> args) async {
   sw.reset();
   sw.start();
   triangulator.processAllPoints();
-  sw.stop();
 
   if (options.verbose) {
     print('Triangulated with ${triangulator.triangles.length ~/ 3} triangles '
@@ -126,55 +118,51 @@ Future<void> main(List<String> args) async {
 
   sw.reset();
   sw.start();
-  final Iterable<Color> redToGreen = gradient(<Color>[
-    Color.red,
-    Color.blue,
-    Color.green,
-  ], 10);
 
   for (int i = 0; i < triangulator.triangles.length; i += 3) {
-    doc.shapes.add(polygonOfTriangle(
-      triangulator.getPoint(triangulator.triangles[i]),
-      triangulator.getPoint(triangulator.triangles[i + 1]),
-      triangulator.getPoint(triangulator.triangles[i + 2]),
-      colorFn: () => randomColorFromList(redToGreen),
-    ));
+    final Point<double> a = triangulator.getPoint(
+      triangulator.triangles[i],
+    );
+    final Point<double> b = triangulator.getPoint(
+      triangulator.triangles[i + 1],
+    );
+    final Point<double> c = triangulator.getPoint(
+      triangulator.triangles[i + 2],
+    );
+    final int color = options.inputImage.getPixel(
+      (a.x.toInt() + b.x.toInt() + c.x.toInt()) ~/ 3,
+      (a.y.toInt() + b.y.toInt() + c.y.toInt()) ~/ 3,
+    );
+    drawTriangle(
+      img,
+      a.x.round(), a.y.round(),
+      b.x.round(), b.y.round(),
+      c.x.round(), c.y.round(),
+      image.Color.fromRgb(0, 0, 0), // black
+      color,
+    );
   }
-  sw.stop();
 
   if (options.verbose) {
-    print('SVG document constructed in ${sw.elapsedMilliseconds}ms.');
+    print('Image drawn in ${sw.elapsedMilliseconds}ms.');
   }
 
   sw.reset();
   sw.start();
-  final File svg = File('delaunator_test.svg');
-  final IOSink ioSink = svg.openWrite();
-  final BufferingIOSink bufferedSink = BufferingIOSink(ioSink);
-  doc.write(bufferedSink);
-  bufferedSink.flush();
-  await ioSink.flush();
-  await ioSink.close();
+  final List<int> imageData = image.encodePng(img, level: 2);
+  File(options.output).writeAsBytesSync(imageData);
   sw.stop();
   if (options.verbose) {
-    print('SVG document written in ${sw.elapsedMilliseconds}ms.');
+    print('PNG document written in ${sw.elapsedMilliseconds}ms.');
   }
+
   return 0;
 }
 
 class Options {
   factory Options.fromArgResults(ArgResults results) {
     bool error = false;
-    final int width = int.tryParse(results['width']);
-    if (width == null || width <= 0) {
-      error = true;
-      stderr.writeln('--wdith must be a strictly positive integer');
-    }
-    final int height = int.tryParse(results['height']);
-    if (height == null || height <= 0) {
-      error = true;
-      stderr.writeln('--height must be a strictly positive integer');
-    }
+    final bool verbose = results['verbose'];
     final int points = int.tryParse(results['points']);
     if (points == null || points <= 0) {
       error = true;
@@ -185,139 +173,142 @@ class Options {
       error = true;
       stderr.writeln('--seed must be a strictly positive integer');
     }
+    final String inputImagePath = results['input'];
+    image.Image inputImage;
+    if (inputImagePath == null) {
+      error = true;
+      stderr.writeln('An --input image is required.');
+    } else {
+      final File inputFile = File(inputImagePath);
+      if (!inputFile.existsSync()) {
+        error = true;
+        stderr.writeln('--input image ${results['input']} does not exist.');
+      }
+      final Stopwatch sw = Stopwatch();
+      sw.start();
+      final List<int> imageData = inputFile.readAsBytesSync();
+      if (verbose) {
+        final int kb = imageData.length >> 10;
+        print('Image data (${kb}KB) read in ${sw.elapsedMilliseconds}ms');
+      }
+      sw.reset();
+      inputImage = image.decodeImage(imageData);
+      sw.stop();
+      if (verbose) {
+        final int w = inputImage.width;
+        final int h = inputImage.height;
+        print('Image data ${w}x$h decoded in ${sw.elapsedMilliseconds}ms');
+      }
+    }
     if (error) {
       return null;
     }
     return Options._(
-      width,
-      height,
       results['output'],
       points,
       seed,
-      results['verbose'],
+      verbose,
       results['help'],
+      inputImage,
     );
   }
 
   Options._(
-    this.width,
-    this.height,
     this.output,
     this.points,
     this.seed,
     this.verbose,
     this.help,
+    this.inputImage,
   );
 
-  final int width;
-  final int height;
   final String output;
   final int points;
   final int seed;
   final bool verbose;
   final bool help;
+  final image.Image inputImage;
 }
 
-Random r;
+void drawTriangle(
+  image.Image img,
+  int ax,
+  int ay,
+  int bx,
+  int by,
+  int cx,
+  int cy,
+  int lineColor,
+  int fillColor,
+) {
+  void fillBottomFlat(int x1, int y1, int x2, int y2, int x3, int y3) {
+    final double slope1 = (x2 - x1).toDouble() / (y2 - y1).toDouble();
+    final double slope2 = (x3 - x1).toDouble() / (y3 - y1).toDouble();
 
-double nextInRange(double min, double max) =>
-    r.nextDouble() * (max - min) + min;
+    double curx1 = x1.toDouble();
+    double curx2 = curx1;
 
-Color randomColor() => rgb(r.nextInt(256), r.nextInt(256), r.nextInt(256));
+    for (int sy = y1; sy <= y2; sy++) {
+      final int cx1 = curx1.toInt();
+      final int cx2 = curx2.toInt();
+      image.drawLine(img, cx1, sy, cx2, sy, fillColor);
+      curx1 += slope1;
+      curx2 += slope2;
+    }
+  }
 
-Color randomGreen(int green) {
-  final int nonGreen = r.nextInt(256);
-  return rgb(nonGreen, green, nonGreen);
-}
+  void fillTopFlat(int x1, int y1, int x2, int y2, int x3, int y3) {
+    final double slope1 = (x3 - x1).toDouble() / (y3 - y1).toDouble();
+    final double slope2 = (x3 - x2).toDouble() / (y3 - y2).toDouble();
 
-Point<double> randomPoint(double minX, double maxX, double minY, double maxY) {
-  return Point<double>(nextInRange(minX, maxX), nextInRange(minY, maxY));
-}
+    double curx1 = x3.toDouble();
+    double curx2 = curx1;
 
-int floor(double d) => d.floor();
+    for (int sy = y3; sy > y1; sy--) {
+      final int cx1 = curx1.toInt();
+      final int cx2 = curx2.toInt();
+      image.drawLine(img, cx1, sy, cx2, sy, fillColor);
+      curx1 -= slope1;
+      curx2 -= slope2;
+    }
+  }
 
-Iterable<Color> gradient(List<Color> colors, int colorsPerSegment) sync* {
-  if (colors.isEmpty) {
-    yield Color.black;
+  // Sort points in ascending order by y coordinate.
+  if (ay > cy) {
+    final int tmpx = ax, tmpy = ay;
+    ax = cx;
+    ay = cy;
+    cx = tmpx;
+    cy = tmpy;
+  }
+
+  if (ay > by) {
+    final int tmpx = ax, tmpy = ay;
+    ax = bx;
+    ay = by;
+    bx = tmpx;
+    by = tmpy;
+  }
+
+  if (by > cy) {
+    final int tmpx = bx, tmpy = by;
+    bx = cx;
+    by = cy;
+    cx = tmpx;
+    cy = tmpy;
+  }
+
+  if (by == cy) {
+    fillBottomFlat(ax, ay, bx, by, cx, cy);
+  } else if (ay == by) {
+    fillTopFlat(ax, ay, bx, by, cx, cy);
   } else {
-    Color start = colors[0];
-    for (int i = 1; i < colors.length; i++) {
-      final Color end = colors[i];
-      final double rStep = (end.r - start.r) / colorsPerSegment;
-      final double gStep = (end.g - start.g) / colorsPerSegment;
-      final double bStep = (end.b - start.b) / colorsPerSegment;
-      for (int j = 0; j < colorsPerSegment; j++) {
-        yield Color(
-          floor(start.r + rStep * j),
-          floor(start.g + gStep * j),
-          floor(start.b + bStep * j),
-        );
-      }
-      start = end;
-    }
-  }
-}
+    final int dy = by;
+    final int dx = ax +
+        (((by - ay).toDouble() / (cy - ay).toDouble()) * (cx - ax).toDouble())
+            .toInt();
 
-Color randomColorFromList(Iterable<Color> colors) =>
-    colors.elementAt(r.nextInt(colors.length));
-
-Polygon polygonOfTriangle(
-  Point<double> a,
-  Point<double> b,
-  Point<double> c, {
-  Color Function() colorFn = randomColor,
-}) {
-  return Polygon(
-    points: <SvgPoint>[
-      SvgPoint(a),
-      SvgPoint(b),
-      SvgPoint(c),
-      SvgPoint(a),
-    ],
-    fill: Fill(color: colorFn()),
-    stroke: const Stroke(width: 1.0, color: Color.black),
-  );
-}
-
-class BufferingIOSink implements StringSink {
-  BufferingIOSink(this.ioSink, {this.bufferSize = 4096});
-
-  final IOSink ioSink;
-  final StringBuffer buffer = StringBuffer();
-  final int bufferSize;
-
-  @override
-  void write(Object obj) {
-    buffer.write(obj);
-    _maybeFlush();
-  }
-
-  @override
-  void writeAll(Iterable<dynamic> objects, [String seperator = '']) {
-    buffer.writeAll(objects, seperator);
-    _maybeFlush();
-  }
-
-  @override
-  void writeCharCode(int charCode) {
-    buffer.writeCharCode(charCode);
-    _maybeFlush();
-  }
-
-  @override
-  void writeln([Object obj = '']) {
-    buffer.writeln(obj);
-    _maybeFlush();
-  }
-
-  Future<void> flush() async {
-    ioSink.write(buffer.toString());
-  }
-
-  void _maybeFlush() {
-    if (buffer.length > bufferSize) {
-      ioSink.write(buffer.toString());
-      buffer.clear();
-    }
+    fillBottomFlat(ax, ay, bx, by, dx, dy);
+    fillTopFlat(bx, by, dx, dy, cx, cy);
   }
 }

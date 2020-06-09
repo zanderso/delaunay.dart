@@ -23,5 +23,3 @@ jobs:
         run: dartanalyzer .
       - name: Test
         run: pub run test
-      - name: Run example
-        run: dart example/delaunay_example.dart
