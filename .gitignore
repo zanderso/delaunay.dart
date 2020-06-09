@@ -11,4 +11,4 @@ build/
 doc/api/
 
 # Example output
-*.svg
+*.png
