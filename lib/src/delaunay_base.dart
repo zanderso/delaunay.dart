@@ -55,6 +55,7 @@ class Delaunay {
         _hull = Uint32List(0),
 
         // Temporary arrays for tracking the edges of the advancing convex hull.
+        _hullStart = -1,
         _hullPrev = Uint32List(coords.length >> 1),
         _hullNext = Uint32List(coords.length >> 1),
         _hullTri = Uint32List(coords.length >> 1),
@@ -64,7 +65,11 @@ class Delaunay {
             Int32List(1 << (sqrt(coords.length << 1).ceil().bitLength + 1))
               ..fillRange(
                   0, 1 << (sqrt(coords.length << 1).ceil().bitLength + 1), -1),
-
+        _i0 = -1,
+        _i1 = -1,
+        _i2 = -1,
+        _cx = 0.0,
+        _cy = 0.0,
         // Arrays to help sort the points.
         _ids = Uint32List(coords.length >> 1),
         _dists = Float32List(coords.length >> 1),
@@ -140,7 +145,7 @@ class Delaunay {
 
   // If needed for performance, the list of coordinates sorted in order of
   // increasing distance from the seed triangle's circumcenter.
-  /* late */ Float32List _sortedCoords;
+  Float32List /*?*/ _sortedCoords;
 
   // A reference either to _inputCoords or _coords whichever is indicated
   // by the number of points.
@@ -155,7 +160,7 @@ class Delaunay {
   final int _hashSize;
   final int _hashMask;
   final Int32List _hullHash;
-  /* late */ int _hullStart;
+  int _hullStart;
   int _hullSize;
   Uint32List _hull;
   final Uint32List _hullPrev;
@@ -166,9 +171,9 @@ class Delaunay {
   final Uint32List _ids;
   final Float32List _dists;
 
-  /* late */ int _i0, _i1, _i2;
-  /* late */ double _cx;
-  /* late */ double _cy;
+  int _i0, _i1, _i2;
+  double _cx;
+  double _cy;
   int _trianglesLen;
 
   bool _colinear;
@@ -335,6 +340,7 @@ class Delaunay {
       // When there are more than ~100000 points, improving the locality of
       // access to the coordinate list improves performance.
       _sortedCoords ??= Float32List(_inputCoords.length);
+      final Float32List localSorted = _sortedCoords /*!*/;
       for (int i = 0; i < n; i++) {
         if (_ids[i] == i0) {
           _i0 = i;
@@ -345,11 +351,11 @@ class Delaunay {
         if (_ids[i] == i2) {
           _i2 = i;
         }
-        _sortedCoords[2 * i] = _inputCoords[2 * _ids[i]];
-        _sortedCoords[2 * i + 1] = _inputCoords[2 * _ids[i] + 1];
+        localSorted[2 * i] = _inputCoords[2 * _ids[i]];
+        localSorted[2 * i + 1] = _inputCoords[2 * _ids[i] + 1];
         _ids[i] = i;
       }
-      _coords = _sortedCoords;
+      _coords = localSorted;
     }
 
     // Set up the seed triangle as the starting hull.
@@ -382,13 +388,14 @@ class Delaunay {
     if (n < 3 || _colinear) {
       return;
     }
-    double xp, yp;
+    double xp = 0.0, yp = 0.0;
     for (int i = 0; i < n; i++) {
       final int idx = _ids[i];
       final double x = _coords[2 * idx];
       final double y = _coords[2 * idx + 1];
 
       if (i > 0 && (x - xp).abs() <= _epsilon && (y - yp).abs() <= _epsilon) {
+        // Too close to the previous point. Skip it.
         continue;
       }
       xp = x;
