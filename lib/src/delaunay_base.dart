@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.12
+
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -145,7 +147,7 @@ class Delaunay {
 
   // If needed for performance, the list of coordinates sorted in order of
   // increasing distance from the seed triangle's circumcenter.
-  Float32List /*?*/ _sortedCoords;
+  Float32List? _sortedCoords;
 
   // A reference either to _inputCoords or _coords whichever is indicated
   // by the number of points.
@@ -340,7 +342,7 @@ class Delaunay {
       // When there are more than ~100000 points, improving the locality of
       // access to the coordinate list improves performance.
       _sortedCoords ??= Float32List(_inputCoords.length);
-      final Float32List localSorted = _sortedCoords /*!*/;
+      final Float32List localSorted = _sortedCoords!;
       for (int i = 0; i < n; i++) {
         if (_ids[i] == i0) {
           _i0 = i;

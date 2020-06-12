@@ -12,3 +12,6 @@ doc/api/
 
 # Example output
 *.png
+
+# AOT compiled binaries
+*.aot

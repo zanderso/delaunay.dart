@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.12
+
 // This program creates a png file of a delaunay trianulation of a random set
 // of points with colors taken from an input image.
 //
@@ -59,30 +61,28 @@ Future<int> main(List<String> args) async {
       defaultsTo: '42',
     );
   final ArgResults argResults = argParser.parse(args);
-  final Options /*?*/ options = Options.fromArgResults(argResults);
-  if (options == null) {
+  final Options? options = Options.fromArgResults(argResults);
+  if (options == null || options.help) {
     stderr.writeln(description);
     stderr.writeln();
     stderr.writeln(argParser.usage);
+    return options == null ? 1 : 0;
+  }
+  if (options.inputImage == null) {
     return 1;
   }
-  if (options.help) {
-    stdout.writeln(description);
-    stdout.writeln();
-    stdout.writeln(argParser.usage);
-    return 0;
-  }
+  final image.Image inputImage = options.inputImage!;
 
   final Random r = Random(options.seed);
 
   const double minX = 0.0;
-  final double maxX = options.inputImage.width.toDouble();
+  final double maxX = inputImage.width.toDouble();
   const double minY = 0.0;
-  final double maxY = options.inputImage.height.toDouble();
+  final double maxY = inputImage.height.toDouble();
 
   final image.Image img = image.Image(
-    options.inputImage.width,
-    options.inputImage.height,
+    inputImage.width,
+    inputImage.height,
   );
 
   final int numPoints = options.points;
@@ -127,7 +127,7 @@ Future<int> main(List<String> args) async {
     final Point<double> c = triangulator.getPoint(
       triangulator.triangles[i + 2],
     );
-    final int color = options.inputImage.getPixel(
+    final int color = inputImage.getPixel(
       (a.x.toInt() + b.x.toInt() + c.x.toInt()) ~/ 3,
       (a.y.toInt() + b.y.toInt() + c.y.toInt()) ~/ 3,
     );
@@ -167,27 +167,41 @@ class Options {
     this.inputImage,
   );
 
-  static Options /*?*/ fromArgResults(ArgResults results) {
-    final bool verbose = results['verbose'] /*!*/;
-    final int /*?*/ points = int.tryParse(results['points'] /*!*/);
+  static Options? fromArgResults(ArgResults results) {
+    final bool verbose = results['verbose']!;
+    final int? points = int.tryParse(results['points']!);
     if (points == null || points <= 0) {
       stderr.writeln('--points must be a strictly positive integer');
       return null;
     }
-    final int /*?*/ seed = int.tryParse(results['seed'] /*!*/);
+    final int? seed = int.tryParse(results['seed']!);
     if (seed == null || seed <= 0) {
       stderr.writeln('--seed must be a strictly positive integer');
       return null;
     }
-    final String /*?*/ inputImagePath = results['input'];
-    image.Image inputImage;
-    if (inputImagePath == null) {
-      stderr.writeln('An --input image is required.');
+    if (!results.wasParsed('input') && !results['help']!) {
+      stderr.writeln('Please supply an image with the --input flag.');
       return null;
     }
+    return Options._(
+      results['output']!,
+      points,
+      seed,
+      verbose,
+      results['help']!,
+      _imageFromArgResults(results, verbose),
+    );
+  }
+
+  static image.Image? _imageFromArgResults(ArgResults results, bool verbose) {
+    if (!results.wasParsed('input')) {
+      return null;
+    }
+    final String inputImagePath = results['input']!;
+    image.Image inputImage;
     final File inputFile = File(inputImagePath);
     if (!inputFile.existsSync()) {
-      stderr.writeln('--input image $inputImagePath does not exist.');
+      stderr.writeln('--input image "$inputImagePath" does not exist.');
       return null;
     }
     final Stopwatch sw = Stopwatch();
@@ -198,22 +212,14 @@ class Options {
       print('Image data (${kb}KB) read in ${sw.elapsedMilliseconds}ms');
     }
     sw.reset();
-    inputImage = image.decodeImage(imageData);
+    inputImage = image.decodeImage(imageData)!;
     sw.stop();
     if (verbose) {
       final int w = inputImage.width;
       final int h = inputImage.height;
       print('Image data ${w}x$h decoded in ${sw.elapsedMilliseconds}ms');
     }
-
-    return Options._(
-      results['output'] /*!*/,
-      points,
-      seed,
-      verbose,
-      results['help'] /*!*/,
-      inputImage,
-    );
+    return inputImage;
   }
 
   final String output;
@@ -221,7 +227,7 @@ class Options {
   final int seed;
   final bool verbose;
   final bool help;
-  final image.Image inputImage;
+  final image.Image? inputImage;
 }
 
 void drawTriangle(

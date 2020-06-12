@@ -1,3 +1,7 @@
+## 1.0.0
+
+- Migrated to null-safety.
+
 ## 0.1.1
 
 - Version bump for pub.

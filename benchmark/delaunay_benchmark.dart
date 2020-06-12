@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.12
+
 // A benchmark that depends only on this package and the core libraries to
 // experiment with nnbd.
 
