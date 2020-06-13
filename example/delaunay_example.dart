@@ -1,8 +1,6 @@
-// Copyright 2020 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// Copyright 2014 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 // This program creates a png file of a delaunay trianulation of a random set
 // of points with colors taken from an input image.
