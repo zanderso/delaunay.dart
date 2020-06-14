@@ -168,11 +168,11 @@ void main() {
   });
 }
 
-final double _epsilon = pow(2.0, -51);
+final double _epsilon = pow(2.0, -51) as double;
 
 void validate(
   Float32List points, [
-  Delaunay d,
+  Delaunay /*?*/ d,
 ]) {
   d ??= Delaunay(points);
   d.update();
