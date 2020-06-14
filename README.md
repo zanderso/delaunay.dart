@@ -35,4 +35,4 @@ delaunay.update();
 Please file feature requests and bugs at the [issue tracker][tracker].
 
 [delaunator]: https://github.com/mapbox/delaunator
-[tracker]: http://example.com/issues/replaceme
+[tracker]: https://github.com/zanderso/delaunay.dart/issues
