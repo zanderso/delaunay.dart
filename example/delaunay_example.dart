@@ -19,7 +19,7 @@ const String description =
     'delaunay_example.dart: An example program that creates a random delaunay '
     'trianulation png file with colors from an input image.';
 
-Future<void> main(List<String> args) async {
+Future<int> main(List<String> args) async {
   final ArgParser argParser = ArgParser()
     ..addFlag(
       'help',
@@ -59,18 +59,18 @@ Future<void> main(List<String> args) async {
       defaultsTo: '42',
     );
   final ArgResults argResults = argParser.parse(args);
-  final Options options = Options.fromArgResults(argResults);
+  final Options /*?*/ options = Options.fromArgResults(argResults);
   if (options == null) {
     stderr.writeln(description);
     stderr.writeln();
     stderr.writeln(argParser.usage);
-    exit(1);
+    return 1;
   }
   if (options.help) {
     stdout.writeln(description);
     stdout.writeln();
     stdout.writeln(argParser.usage);
-    return;
+    return 0;
   }
 
   final Random r = Random(options.seed);
@@ -158,59 +158,6 @@ Future<void> main(List<String> args) async {
 }
 
 class Options {
-  factory Options.fromArgResults(ArgResults results) {
-    bool error = false;
-    final bool verbose = results['verbose'];
-    final int points = int.tryParse(results['points']);
-    if (points == null || points <= 0) {
-      error = true;
-      stderr.writeln('--points must be a strictly positive integer');
-    }
-    final int seed = int.tryParse(results['seed']);
-    if (seed == null || seed <= 0) {
-      error = true;
-      stderr.writeln('--seed must be a strictly positive integer');
-    }
-    final String inputImagePath = results['input'];
-    image.Image inputImage;
-    if (inputImagePath == null) {
-      error = true;
-      stderr.writeln('An --input image is required.');
-    } else {
-      final File inputFile = File(inputImagePath);
-      if (!inputFile.existsSync()) {
-        error = true;
-        stderr.writeln('--input image ${results['input']} does not exist.');
-      }
-      final Stopwatch sw = Stopwatch();
-      sw.start();
-      final List<int> imageData = inputFile.readAsBytesSync();
-      if (verbose) {
-        final int kb = imageData.length >> 10;
-        print('Image data (${kb}KB) read in ${sw.elapsedMilliseconds}ms');
-      }
-      sw.reset();
-      inputImage = image.decodeImage(imageData);
-      sw.stop();
-      if (verbose) {
-        final int w = inputImage.width;
-        final int h = inputImage.height;
-        print('Image data ${w}x$h decoded in ${sw.elapsedMilliseconds}ms');
-      }
-    }
-    if (error) {
-      return null;
-    }
-    return Options._(
-      results['output'],
-      points,
-      seed,
-      verbose,
-      results['help'],
-      inputImage,
-    );
-  }
-
   Options._(
     this.output,
     this.points,
@@ -219,6 +166,55 @@ class Options {
     this.help,
     this.inputImage,
   );
+
+  static Options /*?*/ fromArgResults(ArgResults results) {
+    final bool verbose = results['verbose'] /*!*/;
+    final int /*?*/ points = int.tryParse(results['points'] /*!*/);
+    if (points == null || points <= 0) {
+      stderr.writeln('--points must be a strictly positive integer');
+      return null;
+    }
+    final int /*?*/ seed = int.tryParse(results['seed'] /*!*/);
+    if (seed == null || seed <= 0) {
+      stderr.writeln('--seed must be a strictly positive integer');
+      return null;
+    }
+    final String /*?*/ inputImagePath = results['input'];
+    image.Image inputImage;
+    if (inputImagePath == null) {
+      stderr.writeln('An --input image is required.');
+      return null;
+    }
+    final File inputFile = File(inputImagePath);
+    if (!inputFile.existsSync()) {
+      stderr.writeln('--input image $inputImagePath does not exist.');
+      return null;
+    }
+    final Stopwatch sw = Stopwatch();
+    sw.start();
+    final List<int> imageData = inputFile.readAsBytesSync();
+    if (verbose) {
+      final int kb = imageData.length >> 10;
+      print('Image data (${kb}KB) read in ${sw.elapsedMilliseconds}ms');
+    }
+    sw.reset();
+    inputImage = image.decodeImage(imageData);
+    sw.stop();
+    if (verbose) {
+      final int w = inputImage.width;
+      final int h = inputImage.height;
+      print('Image data ${w}x$h decoded in ${sw.elapsedMilliseconds}ms');
+    }
+
+    return Options._(
+      results['output'] /*!*/,
+      points,
+      seed,
+      verbose,
+      results['help'] /*!*/,
+      inputImage,
+    );
+  }
 
   final String output;
   final int points;
