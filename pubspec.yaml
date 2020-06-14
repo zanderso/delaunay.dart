@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 name: delaunay
-description: Delaunay triangulation.
-version: 0.1.0
+description: Computes the Delaunay triangulation of a set of two dimensional points.
+version: 0.1.1
 homepage: https://github.com/zanderso/delaunay.dart
 
 environment:
