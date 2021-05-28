@@ -12,6 +12,8 @@
 # https://github.com/dart-lang/sdk/tree/master/pkg/analyzer#configuring-the-analyzer
 
 analyzer:
+  enable-experiment:
+    - non-nullable
   strong-mode:
     implicit-dynamic: false
   errors:
