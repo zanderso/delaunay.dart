@@ -18,7 +18,7 @@ delaunay.update();
 for (int i = 0; i < delaunay.triangles.length; i += 3) {
   int a = delaunay.triangles[i];
   int b = delaunay.triangles[i + 1];
-  int c = delaunay.triangles[i + 3];
+  int c = delaunay.triangles[i + 2];
 
   double ax = delaunay.coords[2*a];
   double ay = delaunay.coords[2*a + 1];
