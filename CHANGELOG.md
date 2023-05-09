@@ -1,3 +1,7 @@
+## 2.0.0
+
+- Updated SDK constraint and minor fixes.
+
 ## 1.0.0
 
 - Migrated to null-safety.
