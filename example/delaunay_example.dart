@@ -27,14 +27,12 @@ Future<int> main(List<String> args) async {
       'help',
       abbr: 'h',
       help: 'Print help',
-      defaultsTo: false,
       negatable: false,
     )
     ..addFlag(
       'verbose',
       abbr: 'v',
       help: 'Verbose output',
-      defaultsTo: false,
       negatable: false,
     )
     ..addOption(
@@ -179,7 +177,8 @@ class Options {
       stderr.writeln('--seed must be a strictly positive integer');
       return null;
     }
-    if (!results.wasParsed('input') && !results['help']!) {
+    final bool help = results['help']!;
+    if (!results.wasParsed('input') && help) {
       stderr.writeln('Please supply an image with the --input flag.');
       return null;
     }
