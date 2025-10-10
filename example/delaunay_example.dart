@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-
 // This program creates a png file of a delaunay trianulation of a random set
 // of points with colors taken from an input image.
 //
@@ -12,6 +10,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:args/args.dart';
 import 'package:delaunay/delaunay.dart';
@@ -22,42 +21,33 @@ const String description =
     'trianulation png file with colors from an input image.';
 
 Future<int> main(List<String> args) async {
-  final ArgParser argParser = ArgParser()
-    ..addFlag(
-      'help',
-      abbr: 'h',
-      help: 'Print help',
-      negatable: false,
-    )
-    ..addFlag(
-      'verbose',
-      abbr: 'v',
-      help: 'Verbose output',
-      negatable: false,
-    )
-    ..addOption(
-      'input',
-      abbr: 'i',
-      help: 'Input image from which to extract colors for triangles',
-    )
-    ..addOption(
-      'output',
-      abbr: 'o',
-      help: 'Path to the output file',
-      defaultsTo: 'delaunay.png',
-    )
-    ..addOption(
-      'points',
-      abbr: 'p',
-      help: 'Number of points',
-      defaultsTo: '1000',
-    )
-    ..addOption(
-      'seed',
-      abbr: 's',
-      help: 'RNG seed',
-      defaultsTo: '42',
-    );
+  final ArgParser argParser =
+      ArgParser()
+        ..addFlag('help', abbr: 'h', help: 'Print help', negatable: false)
+        ..addFlag(
+          'verbose',
+          abbr: 'v',
+          help: 'Verbose output',
+          negatable: false,
+        )
+        ..addOption(
+          'input',
+          abbr: 'i',
+          help: 'Input image from which to extract colors for triangles',
+        )
+        ..addOption(
+          'output',
+          abbr: 'o',
+          help: 'Path to the output file',
+          defaultsTo: 'delaunay.png',
+        )
+        ..addOption(
+          'points',
+          abbr: 'p',
+          help: 'Number of points',
+          defaultsTo: '1000',
+        )
+        ..addOption('seed', abbr: 's', help: 'RNG seed', defaultsTo: '42');
   final ArgResults argResults = argParser.parse(args);
   final Options? options = Options.fromArgResults(argResults);
   if (options == null || options.help) {
@@ -79,8 +69,8 @@ Future<int> main(List<String> args) async {
   final double maxY = inputImage.height.toDouble();
 
   final image.Image img = image.Image(
-    inputImage.width,
-    inputImage.height,
+    width: inputImage.width,
+    height: inputImage.height,
   );
 
   final int numPoints = options.points;
@@ -108,34 +98,35 @@ Future<int> main(List<String> args) async {
   triangulator.processAllPoints();
 
   if (options.verbose) {
-    print('Triangulated with ${triangulator.triangles.length ~/ 3} triangles '
-        'in ${sw.elapsedMilliseconds}ms');
+    print(
+      'Triangulated with ${triangulator.triangles.length ~/ 3} triangles '
+      'in ${sw.elapsedMilliseconds}ms',
+    );
   }
 
   sw.reset();
   sw.start();
 
   for (int i = 0; i < triangulator.triangles.length; i += 3) {
-    final Point<double> a = triangulator.getPoint(
-      triangulator.triangles[i],
-    );
+    final Point<double> a = triangulator.getPoint(triangulator.triangles[i]);
     final Point<double> b = triangulator.getPoint(
       triangulator.triangles[i + 1],
     );
     final Point<double> c = triangulator.getPoint(
       triangulator.triangles[i + 2],
     );
-    final int color = inputImage.getPixel(
+    final image.Color color = inputImage.getPixel(
       (a.x.toInt() + b.x.toInt() + c.x.toInt()) ~/ 3,
       (a.y.toInt() + b.y.toInt() + c.y.toInt()) ~/ 3,
     );
-    drawTriangle(
+    image.fillPolygon(
       img,
-      a.x.round(), a.y.round(),
-      b.x.round(), b.y.round(),
-      c.x.round(), c.y.round(),
-      image.Color.fromRgb(0, 0, 0), // black
-      color,
+      color: color,
+      vertices: <image.Point>[
+        image.Point(a.x, a.y),
+        image.Point(b.x, b.y),
+        image.Point(c.x, c.y),
+      ],
     );
   }
 
@@ -205,7 +196,7 @@ class Options {
     }
     final Stopwatch sw = Stopwatch();
     sw.start();
-    final List<int> imageData = inputFile.readAsBytesSync();
+    final Uint8List imageData = inputFile.readAsBytesSync();
     if (verbose) {
       final int kb = imageData.length >> 10;
       print('Image data (${kb}KB) read in ${sw.elapsedMilliseconds}ms');
@@ -227,87 +218,4 @@ class Options {
   final bool verbose;
   final bool help;
   final image.Image? inputImage;
-}
-
-void drawTriangle(
-  image.Image img,
-  int ax,
-  int ay,
-  int bx,
-  int by,
-  int cx,
-  int cy,
-  int lineColor,
-  int fillColor,
-) {
-  void fillBottomFlat(int x1, int y1, int x2, int y2, int x3, int y3) {
-    final double slope1 = (x2 - x1).toDouble() / (y2 - y1).toDouble();
-    final double slope2 = (x3 - x1).toDouble() / (y3 - y1).toDouble();
-
-    double curx1 = x1.toDouble();
-    double curx2 = curx1;
-
-    for (int sy = y1; sy <= y2; sy++) {
-      final int cx1 = curx1.toInt();
-      final int cx2 = curx2.toInt();
-      image.drawLine(img, cx1, sy, cx2, sy, fillColor);
-      curx1 += slope1;
-      curx2 += slope2;
-    }
-  }
-
-  void fillTopFlat(int x1, int y1, int x2, int y2, int x3, int y3) {
-    final double slope1 = (x3 - x1).toDouble() / (y3 - y1).toDouble();
-    final double slope2 = (x3 - x2).toDouble() / (y3 - y2).toDouble();
-
-    double curx1 = x3.toDouble();
-    double curx2 = curx1;
-
-    for (int sy = y3; sy > y1; sy--) {
-      final int cx1 = curx1.toInt();
-      final int cx2 = curx2.toInt();
-      image.drawLine(img, cx1, sy, cx2, sy, fillColor);
-      curx1 -= slope1;
-      curx2 -= slope2;
-    }
-  }
-
-  // Sort points in ascending order by y coordinate.
-  if (ay > cy) {
-    final int tmpx = ax, tmpy = ay;
-    ax = cx;
-    ay = cy;
-    cx = tmpx;
-    cy = tmpy;
-  }
-
-  if (ay > by) {
-    final int tmpx = ax, tmpy = ay;
-    ax = bx;
-    ay = by;
-    bx = tmpx;
-    by = tmpy;
-  }
-
-  if (by > cy) {
-    final int tmpx = bx, tmpy = by;
-    bx = cx;
-    by = cy;
-    cx = tmpx;
-    cy = tmpy;
-  }
-
-  if (by == cy) {
-    fillBottomFlat(ax, ay, bx, by, cx, cy);
-  } else if (ay == by) {
-    fillTopFlat(ax, ay, bx, by, cx, cy);
-  } else {
-    final int dy = by;
-    final int dx = ax +
-        (((by - ay).toDouble() / (cy - ay).toDouble()) * (cx - ax).toDouble())
-            .toInt();
-
-    fillBottomFlat(ax, ay, bx, by, dx, dy);
-    fillTopFlat(bx, by, dx, dy, cx, cy);
-  }
 }

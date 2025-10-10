@@ -4,14 +4,14 @@
 
 name: delaunay
 description: Computes the Delaunay triangulation of a set of two dimensional points.
-version: 2.0.0
+version: 3.0.0
 homepage: https://github.com/zanderso/delaunay.dart
 
 environment:
-  sdk: '>=3.0.0-0 <4.0.0'
+  sdk: '>=3.7.0-0 <4.0.0'
 
 dev_dependencies:
   args: ^2.1.0
-  image: ^3.0.2
-  lints: ^2.0.0
+  image: ^4.5.4
+  lints: ^6.0.0
   test: ^1.17.5

@@ -41,39 +41,38 @@ class Delaunay {
   /// Allocates memory for a Delaunay triangulation, keeping a reference to
   /// [coords].
   Delaunay(Float32List coords)
-      : _inputCoords = coords,
+    : _inputCoords = coords,
 
-        // Provisionally set _coords to the input list. Decide later whether to
-        // sort and replace.
-        _coords = coords,
+      // Provisionally set _coords to the input list. Decide later whether to
+      // sort and replace.
+      _coords = coords,
 
-        // Arrays that will store the triangulation graph.
-        _triangles = Uint32List(max(coords.length - 5, 0) * 3),
-        _halfEdges = Int32List(max(coords.length - 5, 0) * 3),
-        _trianglesLen = 0,
-        _hullSize = 0,
-        _hull = Uint32List(0),
+      // Arrays that will store the triangulation graph.
+      _triangles = Uint32List(max(coords.length - 5, 0) * 3),
+      _halfEdges = Int32List(max(coords.length - 5, 0) * 3),
+      _trianglesLen = 0,
+      _hullSize = 0,
+      _hull = Uint32List(0),
 
-        // Temporary arrays for tracking the edges of the advancing convex hull.
-        _hullStart = -1,
-        _hullPrev = Uint32List(coords.length >> 1),
-        _hullNext = Uint32List(coords.length >> 1),
-        _hullTri = Uint32List(coords.length >> 1),
-        _hashSize = 1 << (sqrt(coords.length << 1).ceil().bitLength + 1),
-        _hashMask = (1 << (sqrt(coords.length << 1).ceil().bitLength + 1)) - 1,
-        _hullHash =
-            Int32List(1 << (sqrt(coords.length << 1).ceil().bitLength + 1))
-              ..fillRange(
-                  0, 1 << (sqrt(coords.length << 1).ceil().bitLength + 1), -1),
-        _i0 = -1,
-        _i1 = -1,
-        _i2 = -1,
-        _cx = 0.0,
-        _cy = 0.0,
-        // Arrays to help sort the points.
-        _ids = Uint32List(coords.length >> 1),
-        _dists = Float32List(coords.length >> 1),
-        _colinear = false;
+      // Temporary arrays for tracking the edges of the advancing convex hull.
+      _hullStart = -1,
+      _hullPrev = Uint32List(coords.length >> 1),
+      _hullNext = Uint32List(coords.length >> 1),
+      _hullTri = Uint32List(coords.length >> 1),
+      _hashSize = 1 << (sqrt(coords.length << 1).ceil().bitLength + 1),
+      _hashMask = (1 << (sqrt(coords.length << 1).ceil().bitLength + 1)) - 1,
+      _hullHash = Int32List(
+        1 << (sqrt(coords.length << 1).ceil().bitLength + 1),
+      )..fillRange(0, 1 << (sqrt(coords.length << 1).ceil().bitLength + 1), -1),
+      _i0 = -1,
+      _i1 = -1,
+      _i2 = -1,
+      _cx = 0.0,
+      _cy = 0.0,
+      // Arrays to help sort the points.
+      _ids = Uint32List(coords.length >> 1),
+      _dists = Float32List(coords.length >> 1),
+      _colinear = false;
 
   /// Allocates memory for a Delaunay triangulation.
   ///
@@ -102,18 +101,12 @@ class Delaunay {
   /// double ax = coords[2 * a];
   /// double ay = coords[2 * a + 1];
   /// ```
-  Uint32List get triangles => Uint32List.sublistView(
-        _triangles,
-        0,
-        _trianglesLen,
-      );
+  Uint32List get triangles =>
+      Uint32List.sublistView(_triangles, 0, _trianglesLen);
 
   /// The list of edges in the triangulation.
-  Int32List get halfEdges => Int32List.sublistView(
-        _halfEdges,
-        0,
-        _trianglesLen,
-      );
+  Int32List get halfEdges =>
+      Int32List.sublistView(_halfEdges, 0, _trianglesLen);
 
   /// The coordinates being triangulated.
   ///
@@ -131,10 +124,8 @@ class Delaunay {
   Uint32List get hull => _hull;
 
   /// `coords[i]` in the form of a `Point<double>`.
-  Point<double> getPoint(int i) => Point<double>(
-        _coords[2 * i],
-        _coords[2 * i + 1],
-      );
+  Point<double> getPoint(int i) =>
+      Point<double>(_coords[2 * i], _coords[2 * i + 1]);
 
   /// Whether after a call to [initialize], it has been detected that this is
   /// the degenerate case of all points being colinear.
@@ -610,7 +601,8 @@ class Delaunay {
         final double bp = ex * ex + ey * ey;
         final double cp = fx * fx + fy * fy;
 
-        illegal = dx * (ey * cp - bp * fy) -
+        illegal =
+            dx * (ey * cp - bp * fy) -
                 dy * (ex * cp - bp * fx) +
                 ap * (ex * fy - ey * fx) <
             0.0;

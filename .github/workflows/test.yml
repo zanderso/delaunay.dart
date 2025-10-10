@@ -16,14 +16,14 @@ permissions: read-all
 
 jobs:
   build:
-    name: Build ${{ matrix.target }}
+    name: Build with ${{ matrix.dartsdk}} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         # TODO(zra): Add stable when it's available.
-        dartsdk: [beta, dev]
+        dartsdk: [stable, beta]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
