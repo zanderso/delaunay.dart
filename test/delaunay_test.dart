@@ -145,24 +145,15 @@ void main() {
     d = Delaunay.from(<Point<double>>[
       const Point<double>(0, 0),
       const Point<double>(1, 1),
-    ])
-      ..update();
+    ])..update();
     expect(d.triangles, isEmpty);
     expect(d.hull, isEmpty);
   });
 
   test('returns empty triangulation for all colinear points', () {
-    final Delaunay d = Delaunay(Float32List.fromList(<double>[
-      0,
-      0,
-      1,
-      0,
-      3,
-      0,
-      2,
-      0,
-    ]))
-      ..update();
+    final Delaunay d = Delaunay(
+      Float32List.fromList(<double>[0, 0, 1, 0, 3, 0, 2, 0]),
+    )..update();
     expect(d.triangles, isEmpty);
     expect(d.hull, equals(<int>[0, 1, 3, 2]));
   });
@@ -170,10 +161,7 @@ void main() {
 
 final double _epsilon = pow(2.0, -51) as double;
 
-void validate(
-  Float32List points, [
-  Delaunay? d,
-]) {
+void validate(Float32List points, [Delaunay? d]) {
   d ??= Delaunay(points);
   d.update();
 
@@ -242,14 +230,7 @@ double orient(
   return (l - r).abs() >= 3.3306690738754716e-16 * (l + r).abs() ? l - r : 0;
 }
 
-bool convex(
-  double rx,
-  double ry,
-  double qx,
-  double qy,
-  double px,
-  double py,
-) {
+bool convex(double rx, double ry, double qx, double qy, double px, double py) {
   double orientation = orient(px, py, rx, ry, qx, qy);
   if (orientation != 0.0) {
     return orientation >= 0.0;
