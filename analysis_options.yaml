@@ -18,11 +18,11 @@ linter:
     - always_specify_types
     # - always_use_package_imports # we do this commonly
     - annotate_overrides
-    # - avoid_annotating_with_dynamic # conflicts with always_specify_types
+    - avoid_annotating_with_dynamic
     - avoid_bool_literals_in_conditional_expressions
-    # - avoid_catches_without_on_clauses # blocked on https://github.com/dart-lang/linter/issues/3023
-    - avoid_catching_errors # blocked on https://github.com/dart-lang/linter/issues/3023
-    - avoid_classes_with_only_static_members # # we do this commonly for `abstract final class`es
+    - avoid_catches_without_on_clauses
+    - avoid_catching_errors
+    - avoid_classes_with_only_static_members
     - avoid_double_and_int_checks
     - avoid_dynamic_calls
     - avoid_empty_else
@@ -36,7 +36,7 @@ linter:
     - avoid_js_rounded_ints
     # - avoid_multiple_declarations_per_line # seems to be a stylistic choice we don't subscribe to
     - avoid_null_checks_in_equality_operators
-    # - avoid_positional_boolean_parameters # would have been nice to enable this but by now there's too many places that break it
+    - avoid_positional_boolean_parameters
     # - avoid_print
     # - avoid_private_typedef_functions # we prefer having typedef (discussion in https://github.com/flutter/flutter/pull/16356)
     - avoid_redundant_argument_values
@@ -48,7 +48,7 @@ linter:
     - avoid_setters_without_getters
     - avoid_shadowing_type_parameters
     - avoid_single_cascade_in_expression_statements
-    - avoid_slow_async_io
+    # - avoid_slow_async_io
     - avoid_type_to_string
     - avoid_types_as_parameter_names
     # - avoid_types_on_closure_parameters # conflicts with always_specify_types
@@ -67,7 +67,7 @@ linter:
     - combinators_ordering
     # - comment_references # blocked on https://github.com/dart-lang/linter/issues/1142
     - conditional_uri_does_not_exist
-    # - constant_identifier_names # needs an opt-out https://github.com/dart-lang/linter/issues/204
+    - constant_identifier_names
     - control_flow_in_finally
     - curly_braces_in_flow_control_structures
     - dangling_library_doc_comments
@@ -75,8 +75,8 @@ linter:
     - deprecated_consistency
     # - diagnostic_describe_all_properties # enabled only at the framework level (packages/flutter/lib)
     - directives_ordering
-    # - discarded_futures # too many false positives, similar to unawaited_futures
-    # - do_not_use_environment # there are appropriate times to use the environment, especially in our tests and build logic
+    - discarded_futures
+    - do_not_use_environment
     - empty_catches
     - empty_constructor_bodies
     - empty_statements
@@ -95,7 +95,7 @@ linter:
     - library_prefixes
     - library_private_types_in_public_api
     # - lines_longer_than_80_chars # not required by flutter style
-    # - literal_only_boolean_expressions # too many false positives: https://github.com/dart-lang/linter/issues/453
+    - literal_only_boolean_expressions
     - missing_whitespace_between_adjacent_strings
     - no_adjacent_strings_in_list
     - no_default_cases
@@ -117,7 +117,7 @@ linter:
     # - parameter_assignments
     - prefer_adjacent_string_concatenation
     - prefer_asserts_in_initializer_lists
-    # - prefer_asserts_with_message # not required by flutter style
+    - prefer_asserts_with_message # not required by flutter style
     - prefer_collection_literals
     - prefer_conditional_assignment
     - prefer_const_constructors
@@ -133,7 +133,7 @@ linter:
     - prefer_final_locals
     # - prefer_final_parameters # adds too much verbosity
     - prefer_for_elements_to_map_fromIterable
-    - prefer_foreach
+    # - prefer_foreach
     - prefer_function_declarations_over_variables
     - prefer_generic_function_type_aliases
     - prefer_if_elements_to_conditional_expressions
@@ -155,9 +155,9 @@ linter:
     - prefer_typing_uninitialized_variables
     - prefer_void_to_null
     - provide_deprecation_message
-    # - public_member_api_docs # enabled on a case-by-case basis; see e.g. packages/analysis_options.yaml
+    - public_member_api_docs # enabled on a case-by-case basis; see e.g. packages/analysis_options.yaml
     - recursive_getters
-    # - require_trailing_commas
+    - require_trailing_commas
     - secure_pubspec_urls
     - sized_box_for_whitespace
     - sized_box_shrink_expand
@@ -169,7 +169,7 @@ linter:
     - test_types_in_equals
     - throw_in_finally
     - tighten_type_of_initializing_formals
-    # - type_annotate_public_apis # subset of always_specify_types
+    - type_annotate_public_apis # subset of always_specify_types
     - type_init_formals
     - unawaited_futures
     - unnecessary_await_in_return

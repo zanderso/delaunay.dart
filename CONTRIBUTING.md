@@ -3,17 +3,18 @@
 We'd love to accept your patches and contributions to this project. There are
 just a few small guidelines you need to follow.
 
-## Contributor License Agreement
+## Delaunay32 vs. Delaunay64
 
-Contributions to this project must be accompanied by a Contributor License
-Agreement. You (or your employer) retain the copyright to your contribution;
-this simply gives us permission to use and redistribute your contributions as
-part of the project. Head over to <https://cla.developers.google.com/> to see
-your current agreements on file or to sign a new one.
+There are two implementations. One that works in terms of `Float32List`,
+and a second that works in terms of `Float64List`. The first one is
+in `Delaunay32` implemented in `lib/src/delaunay_base_32.dart`. The second one
+is in `Delaunay64` implemented in `lib/src/delaunay_base_64.dart`.
 
-You generally only need to submit a CLA once, so if you've already submitted one
-(even if it was for a different project), you probably don't need to do it
-again.
+The file `delaunay_base_64.dart` is generated from `delaunay_base_32.dart` by
+the script in `utils/generator.dart`. Do not edit `delaunay_base_64.dart`
+by hand. Instead, only edit `delaunay_base_32.dart`. When the changes to
+`delaunay_base_32.dart` are in good shape, use the script to copy them over
+to `delaunay_base_64.dart`.
 
 ## Code reviews
 

@@ -3,6 +3,12 @@
 // found in the LICENSE file.
 
 /// A library for computing Delaunay triangulations.
-library delaunay;
+library;
 
-export 'src/delaunay_base.dart';
+import 'src/delaunay_base_32.dart' show Delaunay32;
+export 'src/delaunay_base_32.dart';
+export 'src/delaunay_base_64.dart';
+
+/// For compatibility with older versions, [Delaunay] is
+/// aliased to [Delaunay32].
+typedef Delaunay = Delaunay32;
