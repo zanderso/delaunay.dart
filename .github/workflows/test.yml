@@ -21,9 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        # TODO(zra): Add stable when it's available.
-        dartsdk: [stable, beta]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        dartsdk: [stable, beta, main]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -45,3 +44,13 @@ jobs:
 
       - name: Run benchmark
         run: dart run benchmark/delaunay_benchmark.dart
+
+      - name: Test generator
+        run: |
+          dart run utils/generator.dart
+          dart format --set-exit-if-changed .
+          dart analyze .
+          dart test
+          dart run benchmark/delaunay_benchmark.dart
+
+

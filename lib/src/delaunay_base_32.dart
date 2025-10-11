@@ -18,7 +18,7 @@ final Uint32List _edgeStack = Uint32List(512);
 ///   50.2, -100.7,
 ///   ...
 /// ]);
-/// Delaunay delaunay = Delaunay(points);
+/// Delaunay32 delaunay = Delaunay32(points);
 /// delaunay.update();
 /// for (int i = 0; i < delaunay.triangles.length; i += 3) {
 ///   int a = delaunay.triangles[i];
@@ -37,10 +37,10 @@ final Uint32List _edgeStack = Uint32List(512);
 ///
 /// This implementation is adapted from the Delaunator JavaScript library.
 /// See https://github.com/mapbox/delaunator
-class Delaunay {
+class Delaunay32 {
   /// Allocates memory for a Delaunay triangulation, keeping a reference to
   /// [coords].
-  Delaunay(Float32List coords)
+  Delaunay32(Float32List coords)
     : _inputCoords = coords,
 
       // Provisionally set _coords to the input list. Decide later whether to
@@ -77,7 +77,7 @@ class Delaunay {
   /// Allocates memory for a Delaunay triangulation.
   ///
   /// Copies [points] into a [Float32List], available from the getter [coords].
-  factory Delaunay.from(List<Point<double>> points) {
+  factory Delaunay32.from(List<Point<double>> points) {
     final int n = points.length;
     final Float32List coords = Float32List(n << 1);
     for (int i = 0; i < n; i++) {
@@ -85,7 +85,7 @@ class Delaunay {
       coords[i * 2] = p.x;
       coords[(i * 2) + 1] = p.y;
     }
-    return Delaunay(coords);
+    return Delaunay32(coords);
   }
 
   /// The list of triangles in the triagulation.
@@ -781,15 +781,15 @@ class Delaunay {
       final int median = (left + right) >> 1;
       int i = left + 1;
       int j = right;
-      swap(ids, median, i);
+      _swap(ids, median, i);
       if (dists[ids[left]] > dists[ids[right]]) {
-        swap(ids, left, right);
+        _swap(ids, left, right);
       }
       if (dists[ids[i]] > dists[ids[right]]) {
-        swap(ids, i, right);
+        _swap(ids, i, right);
       }
       if (dists[ids[left]] > dists[ids[i]]) {
-        swap(ids, left, i);
+        _swap(ids, left, i);
       }
 
       final int temp = ids[i];
@@ -804,7 +804,7 @@ class Delaunay {
         if (j < i) {
           break;
         }
-        swap(ids, i, j);
+        _swap(ids, i, j);
       }
       ids[left + 1] = ids[j];
       ids[j] = temp;
@@ -819,7 +819,7 @@ class Delaunay {
     }
   }
 
-  void swap(Uint32List arr, int i, int j) {
+  void _swap(Uint32List arr, int i, int j) {
     final int tmp = arr[i];
     arr[i] = arr[j];
     arr[j] = tmp;

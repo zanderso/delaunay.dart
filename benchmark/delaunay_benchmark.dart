@@ -24,19 +24,44 @@ int main() {
     points.add(Point<double>(r.nextDouble() * maxX, r.nextDouble() * maxY));
   }
 
-  final Delaunay triangulator = Delaunay.from(points);
-  final Stopwatch sw = Stopwatch()..start();
+  final Delaunay32 triangulator32 = Delaunay32.from(points);
+  final Delaunay64 triangulator64 = Delaunay64.from(points);
+  final Stopwatch sw = Stopwatch();
 
-  triangulator.initialize();
-  print('Triangulator initialized in ${sw.elapsedMilliseconds}ms.');
+  measure(
+    stopwatch: sw,
+    description: '32: Initilization',
+    task: () => triangulator32.initialize(),
+  );
 
-  sw.reset();
-  sw.start();
+  measure(
+    stopwatch: sw,
+    description: '32: Triangulation',
+    task: () => triangulator32.processAllPoints(),
+  );
 
-  triangulator.processAllPoints();
-  print(
-    'Triangulated with ${triangulator.triangles.length ~/ 3} triangles '
-    'in ${sw.elapsedMilliseconds}ms',
+  measure(
+    stopwatch: sw,
+    description: '64: Initilization',
+    task: () => triangulator64.initialize(),
+  );
+
+  measure(
+    stopwatch: sw,
+    description: '64: Triangulation',
+    task: () => triangulator64.processAllPoints(),
   );
   return 0;
+}
+
+void measure({
+  required Stopwatch stopwatch,
+  required void Function() task,
+  required String description,
+}) {
+  stopwatch.start();
+  task();
+  final int ms = stopwatch.elapsedMilliseconds;
+  stopwatch.reset();
+  print('$description: ${ms}ms');
 }
